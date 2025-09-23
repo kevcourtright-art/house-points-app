@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/house-points-app/static/css/main.7ad66377.css",
+    "main.js": "/house-points-app/static/js/main.acecf470.js",
+    "static/js/453.a62a163a.chunk.js": "/house-points-app/static/js/453.a62a163a.chunk.js",
+    "index.html": "/house-points-app/index.html",
+    "main.7ad66377.css.map": "/house-points-app/static/css/main.7ad66377.css.map",
+    "main.acecf470.js.map": "/house-points-app/static/js/main.acecf470.js.map",
+    "453.a62a163a.chunk.js.map": "/house-points-app/static/js/453.a62a163a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.7ad66377.css",
+    "static/js/main.acecf470.js"
+  ]
+}
