@@ -1,6 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Check, X, Plus, Trash2, Calendar, Users, Star, Award, Zap } from 'lucide-react';
 
+// Firebase imports
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, onSnapshot, updateDoc } from 'firebase/firestore';
+
+// Your existing Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyBs2MkB1ORFZ7B1QPGUcWQuzgnFjb57-78",
+  authDomain: "chore-chart-5850a.firebaseapp.com",
+  projectId: "chore-chart-5850a",
+  storageBucket: "chore-chart-5850a.firebasestorage.app",
+  messagingSenderId: "489043096558",
+  appId: "1:489043096558:web:adf74662b56aed3946d4ff"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 const HousePointsChart = () => {
   const [houses] = useState(['Aetherwind', 'Emberfox', 'Drakonshade', 'Luminara']);
   
@@ -18,68 +36,78 @@ const HousePointsChart = () => {
   const [manualPoints, setManualPoints] = useState({});
   const [pointInput, setPointInput] = useState('');
   const [selectedHouse, setSelectedHouse] = useState('Aetherwind');
+  const [loading, setLoading] = useState(true);
 
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  // Load data from localStorage on component mount
+  // Firebase real-time listeners
   useEffect(() => {
-    try {
-      const savedTasks = localStorage.getItem('housePoints-tasks');
-      const savedCompletedTasks = localStorage.getItem('housePoints-completedTasks');
-      const savedManualPoints = localStorage.getItem('housePoints-manualPoints');
-      
-      if (savedTasks) {
-        setTasks(JSON.parse(savedTasks));
+    // Listen to tasks changes
+    const unsubscribeTasks = onSnapshot(doc(db, 'housePoints', 'tasks'), (doc) => {
+      if (doc.exists() && doc.data().tasks) {
+        setTasks(doc.data().tasks);
       }
-      if (savedCompletedTasks) {
-        setCompletedTasks(JSON.parse(savedCompletedTasks));
+      setLoading(false);
+    });
+
+    // Listen to completed tasks changes
+    const unsubscribeCompleted = onSnapshot(doc(db, 'housePoints', 'completedTasks'), (doc) => {
+      if (doc.exists() && doc.data().completed) {
+        setCompletedTasks(doc.data().completed);
       }
-      if (savedManualPoints) {
-        setManualPoints(JSON.parse(savedManualPoints));
+    });
+
+    // Listen to manual points changes
+    const unsubscribeManual = onSnapshot(doc(db, 'housePoints', 'manualPoints'), (doc) => {
+      if (doc.exists() && doc.data().points) {
+        setManualPoints(doc.data().points);
       }
-    } catch (error) {
-      console.error('Error loading data from localStorage:', error);
-    }
+    });
+
+    return () => {
+      unsubscribeTasks();
+      unsubscribeCompleted();
+      unsubscribeManual();
+    };
   }, []);
 
-  // Save to localStorage whenever tasks change
-  useEffect(() => {
+  // Save tasks to Firebase
+  const saveTasksToFirebase = async (newTasks) => {
     try {
-      localStorage.setItem('housePoints-tasks', JSON.stringify(tasks));
+      await setDoc(doc(db, 'housePoints', 'tasks'), { tasks: newTasks });
     } catch (error) {
-      console.error('Error saving tasks to localStorage:', error);
+      console.error('Error saving tasks:', error);
     }
-  }, [tasks]);
+  };
 
-  // Save to localStorage whenever completed tasks change
-  useEffect(() => {
+  // Save completed tasks to Firebase
+  const saveCompletedToFirebase = async (completed) => {
     try {
-      localStorage.setItem('housePoints-completedTasks', JSON.stringify(completedTasks));
+      await setDoc(doc(db, 'housePoints', 'completedTasks'), { completed });
     } catch (error) {
-      console.error('Error saving completed tasks to localStorage:', error);
+      console.error('Error saving completed tasks:', error);
     }
-  }, [completedTasks]);
+  };
 
-  // Save to localStorage whenever manual points change
-  useEffect(() => {
+  // Save manual points to Firebase
+  const saveManualPointsToFirebase = async (points) => {
     try {
-      localStorage.setItem('housePoints-manualPoints', JSON.stringify(manualPoints));
+      await setDoc(doc(db, 'housePoints', 'manualPoints'), { points });
     } catch (error) {
-      console.error('Error saving manual points to localStorage:', error);
+      console.error('Error saving manual points:', error);
     }
-  }, [manualPoints]);
+  };
 
   const toggleTask = (house, day, taskId) => {
     const key = `${house}-${day}-${taskId}`;
-    setCompletedTasks(prev => {
-      const newCompleted = { ...prev };
-      if (newCompleted[key]) {
-        delete newCompleted[key];
-      } else {
-        newCompleted[key] = true;
-      }
-      return newCompleted;
-    });
+    const newCompleted = { ...completedTasks };
+    if (newCompleted[key]) {
+      delete newCompleted[key];
+    } else {
+      newCompleted[key] = true;
+    }
+    setCompletedTasks(newCompleted);
+    saveCompletedToFirebase(newCompleted);
   };
 
   const addTask = () => {
@@ -91,6 +119,7 @@ const HousePointsChart = () => {
         category: newTask.category
       }];
       setTasks(newTasks);
+      saveTasksToFirebase(newTasks);
       setNewTask({ name: '', points: 0, category: 'Chores' });
     }
   };
@@ -98,6 +127,7 @@ const HousePointsChart = () => {
   const deleteTask = (taskId) => {
     const newTasks = tasks.filter(task => task.id !== taskId);
     setTasks(newTasks);
+    saveTasksToFirebase(newTasks);
     
     const newCompleted = {};
     Object.keys(completedTasks).forEach(key => {
@@ -106,6 +136,7 @@ const HousePointsChart = () => {
       }
     });
     setCompletedTasks(newCompleted);
+    saveCompletedToFirebase(newCompleted);
   };
 
   const calculateHousePoints = (house) => {
@@ -133,10 +164,12 @@ const HousePointsChart = () => {
   const addManualPoints = () => {
     const points = parseInt(pointInput);
     if (!isNaN(points) && points !== 0) {
-      setManualPoints(prev => ({
-        ...prev,
-        [selectedHouse]: (prev[selectedHouse] || 0) + points
-      }));
+      const newManualPoints = {
+        ...manualPoints,
+        [selectedHouse]: (manualPoints[selectedHouse] || 0) + points
+      };
+      setManualPoints(newManualPoints);
+      saveManualPointsToFirebase(newManualPoints);
       setPointInput('');
     }
   };
@@ -151,11 +184,13 @@ const HousePointsChart = () => {
         }
       });
       setCompletedTasks(newCompleted);
+      saveCompletedToFirebase(newCompleted);
       
       // Clear manual points for this house
       const newManualPoints = { ...manualPoints };
       delete newManualPoints[house];
       setManualPoints(newManualPoints);
+      saveManualPointsToFirebase(newManualPoints);
     }
   };
 
@@ -163,8 +198,8 @@ const HousePointsChart = () => {
     if (window.confirm('Are you sure you want to clear ALL points for ALL houses? This cannot be undone!')) {
       setCompletedTasks({});
       setManualPoints({});
-      localStorage.removeItem('housePoints-completedTasks');
-      localStorage.removeItem('housePoints-manualPoints');
+      saveCompletedToFirebase({});
+      saveManualPointsToFirebase({});
     }
   };
 
@@ -262,6 +297,22 @@ const HousePointsChart = () => {
     points: calculateHousePoints(house)
   })).sort((a, b) => b.points - a.points);
 
+  if (loading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        background: 'linear-gradient(135deg, #1e1b4b, #7c3aed, #ec4899)', 
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'white',
+        fontSize: '1.5rem'
+      }}>
+        Loading House Points...
+      </div>
+    );
+  }
+
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -299,7 +350,7 @@ const HousePointsChart = () => {
               fontWeight: 'bold'
             }}>
               <Star size={24} />
-              <span>Magical House Competition</span>
+              <span>Magical House Competition - Live Updates!</span>
               <Award size={24} />
             </div>
           </div>
