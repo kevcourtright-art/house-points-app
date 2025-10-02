@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/house-points-app/static/css/main.7ad66377.css",
-    "main.js": "/house-points-app/static/js/main.ab9fde24.js",
-    "static/js/453.a62a163a.chunk.js": "/house-points-app/static/js/453.a62a163a.chunk.js",
-    "index.html": "/house-points-app/index.html",
-    "main.7ad66377.css.map": "/house-points-app/static/css/main.7ad66377.css.map",
-    "main.ab9fde24.js.map": "/house-points-app/static/js/main.ab9fde24.js.map",
-    "453.a62a163a.chunk.js.map": "/house-points-app/static/js/453.a62a163a.chunk.js.map"
+    "main.css": "./static/css/main.7ad66377.css",
+    "main.js": "./static/js/main.c4b5eba1.js",
+    "static/js/453.a62a163a.chunk.js": "./static/js/453.a62a163a.chunk.js",
+    "index.html": "./index.html",
+    "main.7ad66377.css.map": "./static/css/main.7ad66377.css.map",
+    "main.c4b5eba1.js.map": "./static/js/main.c4b5eba1.js.map",
+    "453.a62a163a.chunk.js.map": "./static/js/453.a62a163a.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.7ad66377.css",
-    "static/js/main.ab9fde24.js"
+    "static/js/main.c4b5eba1.js"
   ]
 }
